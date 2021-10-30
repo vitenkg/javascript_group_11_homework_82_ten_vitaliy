@@ -1,22 +1,32 @@
 const express = require('express');
 const Track = require('../models/Track');
+const Albums = require('../models/Album');
 
 const router = express.Router();
 
 router.get('/', async (req, res) => {
-  console.log('get tracks');
   try {
     const query = {};
-
     if (req.query.album) {
       query.album = req.query.album;
+      const tracks = await Track.find(query).populate('album', 'name artist');
+      res.send(tracks);
     }
 
-    console.log('query: ', query.album);
+    if (req.query.artist) {
+      let allTracks = [];
+      query.artist = req.query.artist;
+      const albums = await Albums.find(query).populate('artist', 'name artist');
 
-    const tracks = await Track.find(query).populate('album', 'name artist');
-    console.log(tracks);
-    res.send(tracks);
+      for (let i = 0; i < albums.length; i++) {
+        const queryAlbum = {};
+        queryAlbum.album = albums[i]._id;
+        const tracks = await Track.find(queryAlbum).populate('album', 'name artist')
+        allTracks = allTracks.concat(tracks);
+      }
+
+      res.send(allTracks);
+    }
   } catch (e) {
     res.sendStatus(500);
   }
@@ -43,5 +53,19 @@ router.post('/', async (req, res) => {
     res.status(400).send(e);
   }
 });
+
+router.delete('/:id', async (req, res) => {
+  try {
+    const track = await Track.findByIdAndDelete(req.params.id);
+
+    if (track) {
+      res.send(`Product ${track.name} removed`);
+    } else {
+      res.status(404).send({error: 'Product no found'});
+    }
+  } catch (e) {
+
+  }
+})
 
 module.exports = router;
