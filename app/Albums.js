@@ -3,6 +3,7 @@ const path = require('path');
 const multer = require('multer');
 const {nanoid} = require('nanoid');
 const Album = require('../models/Album');
+const Artist = require('../models/Artist');
 const config = require('../config');
 
 const router = express.Router();
@@ -26,13 +27,27 @@ router.get('/', async (req, res) => {
       query.artist = req.query.artist
     }
 
+    console.log(query);
     const albums = await Album.find(query).populate('artist', 'name');
     res.send(albums);
   } catch (e) {
     res.sendStatus(500);
   }
-
 });
+
+router.get('/:id', async (req, res) => {
+  try {
+    const allInfo = [];
+  const albumInfo = await Album.findOne({_id: req.params.id});
+    allInfo.push(albumInfo);
+  const artistInfo = await Artist.findOne({_id: albumInfo.artist});
+    allInfo.push(artistInfo);
+  res.send (allInfo);
+  } catch (e) {
+    res.sendStatus(500);
+  }
+});
+
 
 router.post('/', upload.single('image'), async (req, res) => {
   if (!req.body.name || !req.body.artist) {
